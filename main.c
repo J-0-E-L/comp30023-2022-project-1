@@ -2,8 +2,22 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+typedef struct {
+	int name, references;
+} file_t;
+
+typedef struct {
+	int name, file1, file2;
+} job_t;
+
+typedef struct {
+	job_t **jobs;
+	file_t **files;
+	int num_jobs, num_files, num_alloc_jobs, num_alloc_files;
+} state_t;
+
 int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag);
-int read_file(char *filename, int cflag);
+state_t *read_file(char *filename, int cflag);
 
 int main(int argc, char *argv[]) {
 	int fflag, eflag, cflag;
@@ -13,11 +27,18 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	
-	if (read_file(filename, cflag)) {
+	state_t *state = read_file(filename, cflag);	
+	if (!state) {
 		return 1;
 	}
+	
+	for (int i = 0; i < state->num_jobs; i++) {
+		printf("%d %d %d\n", state->jobs[i]->name, state->jobs[i]->file1, state->jobs[i]->file2);
+	}
 
+	for (int i = 0; i < state->num_files; i++) {
+		printf("%d %d\n", state->files[i]->name, state->files[i]->references);
+	}
 	return 0;
 }
 
@@ -64,18 +85,68 @@ int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, i
 	return 0;
 }
 
-int read_file(char *filename, int cflag) {
-	FILE *fp = fopen(filename, "r");	
+state_t *read_file(char *filename, int cflag) {
+	FILE *fp = fopen(filename, "r");
 	if (!fp) {
 		fprintf(stderr, "Unable to find file '%s'.\n", filename);
-		return 1;
+		return NULL;
 	}
+
+	/* Setup our system state output */	
+	state_t *state = (state_t *)malloc(sizeof(state_t)); 
+	state->num_alloc_jobs = 8;
+	state->num_alloc_files = 8;
+	state->num_jobs = 0;
+	state->num_files = 0;
 	
-	int i, j, k;
-	while (fscanf(fp, "%d %d %d\n", &i, &j, &k) == 3) {
-		printf("%d %d %d\n", i, j, k); // TODO: load info into a nice data structure
+	state->jobs = (job_t **)calloc(state->num_alloc_jobs, sizeof(job_t *));
+	state->files = (file_t **)calloc(state->num_alloc_files, sizeof(file_t *));
+
+	int name, file1, file2;
+	while (fscanf(fp, "%d %d %d\n", &name, &file1, &file2) == 3) {
+		/* Add the job */
+		job_t *job = (job_t *)malloc(sizeof(job_t));
+		job->name = name;
+		job->file1 = file1;
+		job->file2 = file2;
+		state->jobs[state->num_jobs] = job; // TODO: make sure there is enough space
+		state->num_jobs++;
+		
+		int file1_found = 0, file2_found = 0;
+		for (int i = 0; i < state->num_files; i++) {
+			if (file1_found && file2_found) {
+				break;
+			}
+			if (!file1_found && state->files[i]->name == file1) {
+				file1_found = 1; 
+				state->files[i]->references++;
+			}
+			if (!file2_found && state->files[i]->name == file2) {
+				file2_found = 1; 
+				state->files[i]->references++;
+			}
+		}
+		
+		/* Add file1 */
+		file_t *file;
+		if (!file1_found) {
+			file = (file_t *)malloc(sizeof(file_t));
+			file->name = file1;
+			file->references = 1;
+			state->files[state->num_files] = file; // TODO: make sure there is enough space
+			state->num_files++;
+		}
+		
+		/* Add file2 */
+		if (!file2_found) {
+			file = (file_t *)malloc(sizeof(file_t));
+			file->name = file2;
+			file->references = 1;
+			state->files[state->num_files] = file; // TODO: make sure there is enough space
+			state->num_files++;
+		}
 	}
 
 	fclose(fp);
-	return 0;
+	return state;
 }
