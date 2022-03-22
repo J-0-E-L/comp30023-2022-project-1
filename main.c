@@ -1,22 +1,28 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
-int setopt(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag);
+int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag);
+int read_file(char *filename, int cflag);
 
 int main(int argc, char *argv[]) {
 	int fflag, eflag, cflag;
 	char *filename;
 
-	if (setopt(argc, argv, &fflag, &filename, &eflag, &cflag)) {
+	if (set_flags(argc, argv, &fflag, &filename, &eflag, &cflag)) {
 		return 1;
 	}
 
-	printf("%s\n", filename);
+	
+	if (read_file(filename, cflag)) {
+		return 1;
+	}
+
 	return 0;
 }
 
 
-int setopt(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag) {
+int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag) {
 	/* Get command line options - heavily based on the example given at: "https://www.gnu.org/software/libc/manual/html_node/Example-of-Getopt.html" */
 	*fflag = 0, *eflag = 0, *cflag = 0;
 
@@ -55,5 +61,21 @@ int setopt(int argc, char *argv[], int *fflag, char **filename, int *eflag, int 
 		return 1;
 	}	
 
+	return 0;
+}
+
+int read_file(char *filename, int cflag) {
+	FILE *fp = fopen(filename, "r");	
+	if (!fp) {
+		fprintf(stderr, "Unable to find file '%s'.\n", filename);
+		return 1;
+	}
+	
+	int i, j, k;
+	while (fscanf(fp, "%d %d %d\n", &i, &j, &k) == 3) {
+		printf("%d %d %d\n", i, j, k); // TODO: load info into a nice data structure
+	}
+
+	fclose(fp);
 	return 0;
 }
