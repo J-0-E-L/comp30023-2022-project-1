@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall
 OUT = detect
-OBJ = main.o
+OBJ = main.o graph.o
 
 $(OUT): $(OBJ)
 	$(CC) $(CFLAGS) -o $(OUT) $(OBJ)

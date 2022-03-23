@@ -1,6 +1,17 @@
-typedef struct graph graph_t;
-typedef struct vertex vertex_t;
-typedef struct edge edge_t;
+typedef struct vertex {
+	int name;
+} vertex_t;
+
+typedef struct edge {
+	int name;
+	vertex_t *start, *end;
+} edge_t;
+
+typedef struct graph {
+	vertex_t **vertices;
+	edge_t **edges;
+	int n_vertices, n_edges, vertices_alloced, edges_alloced;
+} graph_t;
 
 graph_t *get_graph();
 void free_graph(graph_t *graph);
