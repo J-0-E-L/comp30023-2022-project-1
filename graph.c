@@ -34,11 +34,12 @@ void free_graph(graph_t *graph) {
 	free(graph);
 }
 
-int add_vertex(graph_t *graph, int name) {
+vertex_t *add_vertex(graph_t *graph, int name) {
+	assert(graph);
 	/* Disallow duplicates */
-	int i = find_vertex(graph, name);
-	if (i != -1) {
-		return i;
+	vertex_t *old = find_vertex(graph, name);
+	if (old) {
+		return old;
 	}
 
 	vertex_t *new = (vertex_t *)malloc(sizeof(vertex_t));
@@ -53,14 +54,15 @@ int add_vertex(graph_t *graph, int name) {
 	}
 	graph->vertices[graph->n_vertices] = new;
 	graph->n_vertices++;
-	return graph->n_vertices - 1;
+	return new;
 }
 
-int add_edge(graph_t *graph, int name, int start, int end) {
+edge_t *add_edge(graph_t *graph, int name, int start, int end) {
+	assert(graph);
 	/* Disallow duplicates */
-	int i = find_edge(graph, name);
-	if (i != -1) {
-		return i;
+	edge_t *old = find_edge(graph, name);
+	if (old) {
+		return old;
 	}
 	
 	edge_t *new = (edge_t *)malloc(sizeof(edge_t));
@@ -77,31 +79,33 @@ int add_edge(graph_t *graph, int name, int start, int end) {
 	}
 	graph->edges[graph->n_edges] = new;
 	graph->n_edges++;
-	return graph->n_edges - 1;
+	return new;
 }
 
-int find_vertex(graph_t *graph, int name) {
+vertex_t *find_vertex(graph_t *graph, int name) {
+	assert(graph);
 	for (int i = 0; i < graph->n_vertices; i++) { // TODO: binary search
 		if (graph->vertices[i]->name == name) {
-			return i;
+			return graph->vertices[i];
 		}
 	}
-	return -1;
+	return NULL;
 }
 
-int find_edge(graph_t *graph, int name) {
+edge_t *find_edge(graph_t *graph, int name) {
+	assert(graph);
 	for (int i = 0; i < graph->n_edges; i++) { // TODO: binary search
 		if (graph->edges[i]->name == name) {
-			return i;
+			return graph->edges[i];
 		}
 	}
-	return -1;
+	return NULL;
 }
 
-int incidence(graph_t *graph, int edge, int vertex) {
-	assert(0 <= edge && edge < graph->n_edges);
-	assert(0 <= vertex && vertex < graph->n_vertices);
-	if (graph->edges[edge]->start == vertex) return -1;
-	if (graph->edges[edge]->end == vertex) return 1;
+int incidence(edge_t *edge, vertex_t *vertex) {
+	assert(edge), assert(vertex);
+	
+	if (edge->start == vertex) return -1;
+	if (edge->end == vertex) return 1;
 	return 0;
 }

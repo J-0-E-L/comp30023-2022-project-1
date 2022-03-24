@@ -3,7 +3,8 @@ typedef struct vertex {
 } vertex_t;
 
 typedef struct edge {
-	int name, start, end;
+	int name;
+	vertex_t *start, *end;
 } edge_t;
 
 typedef struct graph {
@@ -15,10 +16,10 @@ typedef struct graph {
 graph_t *get_graph();
 void free_graph(graph_t *graph);
 
-int add_vertex(graph_t *graph, int name);
-int add_edge(graph_t *graph, int name, int start, int end);
+vertex_t *add_vertex(graph_t *graph, int name);
+edge_t *add_edge(graph_t *graph, int name, int start, int end);
 
-int find_vertex(graph_t *graph, int name);
-int find_edge(graph_t *graph, int name);
+vertex_t *find_vertex(graph_t *graph, int name);
+edge_t *find_edge(graph_t *graph, int name);
 
-int incidence(graph_t *graph, int edge_index, int vertex_index);
+int incidence(edge_t *edge, vertex_t *vertex);

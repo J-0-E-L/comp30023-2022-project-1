@@ -25,21 +25,10 @@ int main(int argc, char *argv[]) {
 
 	/* Task 2 */
 	if (eflag) {
-		int max_degree = 0; // TODO
-		for (int i = 0; i < graph->n_vertices; i++) {
-			int degree = 0;
-			for (int j = 0; j < graph->n_edges; j++) {
-				if (incidence(graph, j, i) == 1) {
-					degree++;
-				}
-			}
-			if (degree > max_degree) {
-				max_degree = degree;
-			}
-		}
-		printf("Execution time %d\n", 2 * max_degree - 1);
+		int time = 0; // TODO: implement this
+		printf("Execution time %d\n", time);
 	}
-
+	
 	return 0;
 }
 
