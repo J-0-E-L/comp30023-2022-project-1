@@ -2,11 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <assert.h>
 #include "graph.h"
 
 int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag);
 graph_t *read_file(char *filename, int cflag);
 
+int has_cycle(graph_t *graph);
 int count_cycles(graph_t *graph, edge_t *edge);
 int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source);
 
@@ -30,21 +32,19 @@ int main(int argc, char *argv[]) {
 	if (eflag) {
 		int time = 0; // TODO: implement this
 		printf("Execution time %d\n", time);
-	}
-	
-	/* Task 3, 4, 5 */
-	int *n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
+	} else {
+		/* Task 3, 4, 5 */
+		int *n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
 
-	for (int i = 0; i < graph->n_edges; i++) {
-		n_cycles[i] = count_cycles(graph, graph->edges[i]);
-	}
+		for (int i = 0; i < graph->n_edges; i++) {
+			n_cycles[i] = count_cycles(graph, graph->edges[i]);
+		}
 
-	// TODO: use n_cycles info
-	for (int i = 0; i < graph->n_edges; i++) {
-		printf("%d\n", n_cycles[i]);
-	}
+		for (int i = 0; i < graph->n_edges; i++) {
+		}
 
-	free(n_cycles);
+		free(n_cycles);
+	}
 
 	return 0;
 }
@@ -107,6 +107,54 @@ graph_t *read_file(char *filename, int cflag) {
 	fclose(fp);
 
 	return graph;
+}
+
+int has_cycle(graph_t *graph) {
+	vertex_t **stack = (vertex_t **)malloc(graph->n_vertices * sizeof(vertex_t *));
+	assert(stack);
+	int n_stack = 0;
+
+	for (int i = 0; i < graph->n_vertices; i++) {
+		graph->vertices[i]->tag = 0;
+	}
+
+	/* Do DFS on each component */ 
+	for (int i = 0; i < graph->n_vertices; i++) {
+		if (!graph->vertices[i]->tag) {
+			/* Load up our source vertex for this component */
+			assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
+			stack[n_stack] = graph->vertices[i];
+			n_stack++;
+			/* DFS */
+			while (n_stack) {
+				vertex_t *vertex = stack[n_stack - 1];
+				vertex->tag = 1;
+				
+				int dead_end = 1;
+				for (int j = 0; j < graph->n_edges; j++) {
+					if (incidence(graph->edges[j], vertex) == -1) {
+						/* Found a back-edge */
+						if (graph->edges[j]->end->tag) {
+							free(stack);
+							return 1;
+						}
+						assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
+						stack[n_stack] = graph->edges[j]->end;
+						n_stack++;
+						dead_end = 0;
+						break;
+					}
+				}
+
+				if (dead_end) {
+					n_stack--;
+				}
+			}
+		}
+	}
+
+	free(stack);
+	return 0;
 }
 
 int count_cycles(graph_t *graph, edge_t *edge) {

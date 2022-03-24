@@ -45,6 +45,7 @@ vertex_t *add_vertex(graph_t *graph, int name) {
 	vertex_t *new = (vertex_t *)malloc(sizeof(vertex_t));
 	assert(new);
 	new->name = name;
+	new->tag = 0;
 
 	if (graph->n_vertices >= graph->vertices_alloced) {
 		//printf("vertices %d -> %d\n", graph->vertices_alloced, graph->vertices_alloced * 2);

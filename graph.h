@@ -1,5 +1,5 @@
 typedef struct vertex {
-	int name;
+	int name, tag;
 } vertex_t;
 
 typedef struct edge {
