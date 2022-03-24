@@ -19,7 +19,6 @@ int main(int argc, char *argv[]) {
 	if (!graph) {
 		return 1;
 	}
-	
 	/* Task 1 */
 	printf("Processes %d\n", graph->n_edges);
 	printf("Files %d\n", graph->n_vertices);
@@ -27,6 +26,17 @@ int main(int argc, char *argv[]) {
 	/* Task 2 */
 	if (eflag) {
 		int max_degree = 0; // TODO
+		for (int i = 0; i < graph->n_vertices; i++) {
+			int degree = 0;
+			for (int j = 0; j < graph->n_edges; j++) {
+				if (incidence(graph, j, i) == 1) {
+					degree++;
+				}
+			}
+			if (degree > max_degree) {
+				max_degree = degree;
+			}
+		}
 		printf("Execution time %d\n", 2 * max_degree - 1);
 	}
 
