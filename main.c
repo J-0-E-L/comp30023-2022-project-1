@@ -7,6 +7,9 @@
 int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, int *cflag);
 graph_t *read_file(char *filename, int cflag);
 
+int count_cycles(graph_t *graph, edge_t *edge);
+int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source);
+
 int main(int argc, char *argv[]) {
 	int fflag, eflag, cflag;
 	char *filename;
@@ -29,6 +32,20 @@ int main(int argc, char *argv[]) {
 		printf("Execution time %d\n", time);
 	}
 	
+	/* Task 3, 4, 5 */
+	int *n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
+
+	for (int i = 0; i < graph->n_edges; i++) {
+		n_cycles[i] = count_cycles(graph, graph->edges[i]);
+	}
+
+	// TODO: use n_cycles info
+	for (int i = 0; i < graph->n_edges; i++) {
+		printf("%d\n", n_cycles[i]);
+	}
+
+	free(n_cycles);
+
 	return 0;
 }
 
@@ -90,4 +107,27 @@ graph_t *read_file(char *filename, int cflag) {
 	fclose(fp);
 
 	return graph;
+}
+
+int count_cycles(graph_t *graph, edge_t *edge) {
+	int n_cycles = 0;
+	vertex_t *source = edge->end, *target = edge->start;
+	
+	n_cycles = _count_cycles(graph, target, source);
+	
+	return n_cycles;
+}
+
+int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source) {
+	int n_cycles = 0;
+	for (int i = 0; i < graph->n_edges; i++) {
+		if (graph->edges[i]->start == source) {
+			if (graph->edges[i]->end == target) {
+				n_cycles++;
+			} else {
+				n_cycles += _count_cycles(graph, target, graph->edges[i]->end);
+			}
+		}
+	}
+	return n_cycles;
 }
