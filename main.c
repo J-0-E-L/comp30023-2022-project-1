@@ -34,15 +34,37 @@ int main(int argc, char *argv[]) {
 		printf("Execution time %d\n", time);
 	} else {
 		/* Task 3, 4, 5 */
-		int *n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
+		int *n_cycles = NULL, first = 1;
+		while (has_cycle(graph)) {
+			if (!n_cycles) {
+				n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
+				assert(n_cycles);
+			}
+	
+			for (int i = 0; i < graph->n_edges; i++) {
+				n_cycles[i] = count_cycles(graph, graph->edges[i]);
+			}
+			
+			/* Get the edge which is contained in the most cycles */
+			/* The graph has a cycle so we are guaranteed to have at least 3 edges */
+			int best = 0;
+			for (int i = 1; i < graph->n_edges; i++) {
+				if (n_cycles[i] > n_cycles[best] || (n_cycles[i] == n_cycles[best] && graph->edges[i]->name < graph->edges[best]->name)) {
+					best = i;
+				}
+			}
 
-		for (int i = 0; i < graph->n_edges; i++) {
-			n_cycles[i] = count_cycles(graph, graph->edges[i]);
+			/* Remove this edge */
+			if (first) {
+				printf("Deadlock detected\n");
+				printf("Terminate %d", graph->edges[best]->name);
+				first = 0;
+			} else {
+				printf(" %d", graph->edges[best]->name);
+			}
+			remove_edge(graph, graph->edges[best]->name);
 		}
-
-		for (int i = 0; i < graph->n_edges; i++) {
-		}
-
+		printf("\n");
 		free(n_cycles);
 	}
 
@@ -128,21 +150,23 @@ int has_cycle(graph_t *graph) {
 			/* DFS */
 			while (n_stack) {
 				vertex_t *vertex = stack[n_stack - 1];
-				vertex->tag = 1;
+				vertex->tag = i + 1;
 				
 				int dead_end = 1;
 				for (int j = 0; j < graph->n_edges; j++) {
 					if (incidence(graph->edges[j], vertex) == -1) {
-						/* Found a back-edge */
-						if (graph->edges[j]->end->tag) {
+						/* Did we find a new vertex? */
+						if (!graph->edges[j]->end->tag) {
+							assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
+							stack[n_stack] = graph->edges[j]->end;
+							n_stack++;
+							dead_end = 0;
+							break;
+						/* Do we have a back-edge? */
+						} else if (graph->edges[j]->end->tag == i + 1) {
 							free(stack);
 							return 1;
 						}
-						assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
-						stack[n_stack] = graph->edges[j]->end;
-						n_stack++;
-						dead_end = 0;
-						break;
 					}
 				}
 

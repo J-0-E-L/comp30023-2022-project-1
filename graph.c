@@ -83,9 +83,24 @@ edge_t *add_edge(graph_t *graph, int name, int start, int end) {
 	return new;
 }
 
+//int remove_vertex(graph_t *graph, int name);
+
+int remove_edge(graph_t *graph, int name) {
+	for (int i = 0; i < graph->n_edges; i++) {
+		if (graph->edges[i]->name == name) {
+			free(graph->edges[i]);
+			graph->edges[i] = graph->edges[graph->n_edges - 1];
+			graph->edges[graph->n_edges - 1] = NULL; // TODO: am I really morally obligated to do this?
+			graph->n_edges--;
+			return 1;
+		}
+	}
+	return 0;
+}
+
 vertex_t *find_vertex(graph_t *graph, int name) {
 	assert(graph);
-	for (int i = 0; i < graph->n_vertices; i++) { // TODO: binary search
+	for (int i = 0; i < graph->n_vertices; i++) {
 		if (graph->vertices[i]->name == name) {
 			return graph->vertices[i];
 		}
@@ -95,7 +110,7 @@ vertex_t *find_vertex(graph_t *graph, int name) {
 
 edge_t *find_edge(graph_t *graph, int name) {
 	assert(graph);
-	for (int i = 0; i < graph->n_edges; i++) { // TODO: binary search
+	for (int i = 0; i < graph->n_edges; i++) {
 		if (graph->edges[i]->name == name) {
 			return graph->edges[i];
 		}

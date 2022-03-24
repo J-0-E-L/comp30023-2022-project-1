@@ -19,6 +19,9 @@ void free_graph(graph_t *graph);
 vertex_t *add_vertex(graph_t *graph, int name);
 edge_t *add_edge(graph_t *graph, int name, int start, int end);
 
+//int remove_vertex(graph_t *graph, int name);
+int remove_edge(graph_t *graph, int name);
+
 vertex_t *find_vertex(graph_t *graph, int name);
 edge_t *find_edge(graph_t *graph, int name);
 
