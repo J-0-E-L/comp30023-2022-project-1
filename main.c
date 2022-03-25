@@ -11,7 +11,6 @@ graph_t *read_file(char *filename, int cflag);
 int has_cycle(graph_t *graph);
 int _has_cycle(graph_t *graph, vertex_t *vertex, int component);
 int count_cycles(graph_t *graph, edge_t *edge);
-int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source);
 
 int main(int argc, char *argv[]) {
 	int fflag, eflag, cflag;
@@ -163,19 +162,37 @@ int _has_cycle(graph_t *graph, vertex_t *vertex, int component) {
 }
 
 int count_cycles(graph_t *graph, edge_t *edge) {
-	return _count_cycles(graph, edge->start, edge->end);
-}
+	for (int i = 0; i < graph->n_vertices; i++) {
+		graph->vertices[i]->tag = 0;
+	}
 
-int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source) {
-	int n_cycles = 0;
-	for (int i = 0; i < graph->n_edges; i++) {
-		if (graph->edges[i]->start == source) {
-			if (graph->edges[i]->end == target) {
-				n_cycles++;
-			} else {
-				n_cycles += _count_cycles(graph, target, graph->edges[i]->end);
+	vertex_t *source = edge->end, *target = edge->start;
+	vertex_t **queue = (vertex_t **)malloc(graph->n_vertices * sizeof(vertex_t *));
+	assert(queue);
+	int s_queue = 0, n_queue = 0, n_cycles = 0;
+
+	queue[s_queue] = source;
+	n_queue++;
+
+	while (n_queue) {
+		vertex_t *current = queue[s_queue];
+		s_queue = (s_queue + 1) % graph->n_vertices;
+		n_queue--;
+		/* Go through all edges starting from the current vertex */
+		for (int i = 0; i < graph->n_edges; i++) {
+			if (incidence(graph->edges[i], current) == -1 && !graph->edges[i]->end->tag) {
+				if (!graph->edges[i]->end->tag) {
+					queue[(s_queue + n_queue) % graph->n_vertices] = graph->edges[i]->end;
+					n_queue++;
+				}
+
+				if (graph->edges[i]->end == target) {
+					n_cycles++;
+				}
 			}
 		}
+		current->tag = 1;
 	}
+
 	return n_cycles;
 }
