@@ -31,6 +31,8 @@ void free_graph(graph_t *graph) {
 	for (int i = 0; i < graph->n_edges; i++) {
 		free(graph->edges[i]);
 	}
+	free(graph->vertices);
+	free(graph->edges);
 	free(graph);
 }
 

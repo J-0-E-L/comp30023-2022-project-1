@@ -9,21 +9,25 @@ int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, i
 graph_t *read_file(char *filename, int cflag);
 
 int has_cycle(graph_t *graph);
-int _has_cycle(graph_t *graph, vertex_t *vertex, int component);
+int _has_cycle(graph_t *graph, vertex_t *vertex);
 int count_cycles(graph_t *graph, edge_t *edge);
+int n_trails(graph_t *graph, vertex_t *source, vertex_t *target);
 
 int main(int argc, char *argv[]) {
 	int fflag, eflag, cflag;
 	char *filename;
 
+	/* Get command line arguments */
 	if (set_flags(argc, argv, &fflag, &filename, &eflag, &cflag)) {
 		return 1;
 	}
 
+	/* Load the target file into a graph structure */
 	graph_t *graph = read_file(filename, cflag);	
 	if (!graph) {
 		return 1;
 	}
+	
 	/* Task 1 */
 	printf("Processes %d\n", graph->n_edges);
 	printf("Files %d\n", graph->n_vertices);
@@ -34,45 +38,38 @@ int main(int argc, char *argv[]) {
 		printf("Execution time %d\n", time);
 	} else {
 		/* Task 3, 4, 5 */
-		int *n_cycles = NULL, first = 1;
+		int first = 1;
 		while (has_cycle(graph)) {
-			if (!n_cycles) {
-				n_cycles = (int *)malloc(graph->n_edges * sizeof(int));
-				assert(n_cycles);
-			}
 	
-			for (int i = 0; i < graph->n_edges; i++) {
-				n_cycles[i] = count_cycles(graph, graph->edges[i]);
-			}
-			
 			/* Get the edge which is contained in the most cycles */
-			/* The graph has a cycle so we are guaranteed to have at least 3 edges */
-			int best = 0;
-			for (int i = 1; i < graph->n_edges; i++) {
-				if (n_cycles[i] > n_cycles[best] || (n_cycles[i] == n_cycles[best] && graph->edges[i]->name < graph->edges[best]->name)) {
-					best = i;
+			edge_t *best = NULL;
+			int max_cycles = 0;
+			for (int i = 0; i < graph->n_edges; i++) {
+				int n_cycles = count_cycles(graph, graph->edges[i]);
+				if (n_cycles > max_cycles || (n_cycles == max_cycles && graph->edges[i]->name < best->name)) {
+					best = graph->edges[i];
+					max_cycles = n_cycles;
 				}
 			}
-
-			/* Remove this edge */
+			
+			/* Remove the found edge */
 			if (first) {
 				printf("Deadlock detected\n");
-				printf("Terminate %d", graph->edges[best]->name);
+				printf("Terminate %d", best->name);
 				first = 0;
 			} else {
-				printf(" %d", graph->edges[best]->name);
+				printf(" %d", best->name);
 			}
-			remove_edge(graph, graph->edges[best]->name);
+			remove_edge(graph, best->name);
 		}
-		/* Were there any deadlocks found? */
+		/* Were there any deadlocks? */
 		if (first) {
 			printf("No deadlocks\n");
 		} else {
 			printf("\n");
-			free(n_cycles);
 		}
 	}
-
+	free_graph(graph);
 	return 0;
 }
 
@@ -142,7 +139,7 @@ int has_cycle(graph_t *graph) {
 	}
 
 	for (int i = 0; i < graph->n_vertices; i++) {
-		if (_has_cycle(graph, graph->vertices[i], i + 1)) {
+		if (_has_cycle(graph, graph->vertices[i])) {
 			return 1;
 		}
 	}
@@ -150,19 +147,23 @@ int has_cycle(graph_t *graph) {
 	return 0;
 }
 
-int _has_cycle(graph_t *graph, vertex_t *vertex, int component) {
-	vertex->tag = component;
+int _has_cycle(graph_t *graph, vertex_t *vertex) {
+	vertex->tag = 1;
+	/* Look through all outgoing edges */
 	for (int i = 0; i < graph->n_edges; i++) {
 		if (incidence(graph->edges[i], vertex) == -1) {
-			if (!graph->edges[i]->end->tag) {
-				if (_has_cycle(graph, graph->edges[i]->end, component)) {
-					return 1;
-				}
-			} else if (graph->edges[i]->end->tag == component) {
+
+			if (graph->edges[i]->end->tag == 1) {
 				return 1;
 			}
+
+			if (graph->edges[i]->end->tag == 0 && _has_cycle(graph, graph->edges[i]->end)) {
+				return 1;
+			}
+
 		}
 	}
+	vertex->tag = 2;
 	return 0;
 }
 
@@ -170,34 +171,23 @@ int count_cycles(graph_t *graph, edge_t *edge) {
 	for (int i = 0; i < graph->n_vertices; i++) {
 		graph->vertices[i]->tag = 0;
 	}
+	return n_trails(graph, edge->end, edge->start);
+}
 
-	vertex_t *source = edge->end, *target = edge->start;
-	vertex_t **queue = (vertex_t **)malloc(graph->n_vertices * sizeof(vertex_t *));
-	assert(queue);
-	int s_queue = 0, n_queue = 0, n_cycles = 0;
-
-	queue[s_queue] = source;
-	n_queue++;
-
-	while (n_queue) {
-		vertex_t *current = queue[s_queue];
-		s_queue = (s_queue + 1) % graph->n_vertices;
-		n_queue--;
-		/* Go through all edges starting from the current vertex */
-		for (int i = 0; i < graph->n_edges; i++) {
-			if (incidence(graph->edges[i], current) == -1 && !graph->edges[i]->end->tag) {
-				if (!graph->edges[i]->end->tag) {
-					queue[(s_queue + n_queue) % graph->n_vertices] = graph->edges[i]->end;
-					n_queue++;
-				}
-
-				if (graph->edges[i]->end == target) {
-					n_cycles++;
-				}
+int n_trails(graph_t *graph, vertex_t *source, vertex_t *target) {
+	int out = 0;
+	source->tag = 1;
+	for (int i = 0; i < graph->n_edges; i++) {
+		if (incidence(graph->edges[i], source) == -1) {
+			if (incidence(graph->edges[i], target) == 1) {
+				out++;
+			}
+			if (!graph->edges[i]->end->tag) {
+				out += n_trails(graph, graph->edges[i]->end, target);
 			}
 		}
-		current->tag = 1;
 	}
-
-	return n_cycles;
+	source->tag = 0;
+	return out;
 }
+
