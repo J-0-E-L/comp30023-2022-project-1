@@ -9,6 +9,7 @@ int set_flags(int argc, char *argv[], int *fflag, char **filename, int *eflag, i
 graph_t *read_file(char *filename, int cflag);
 
 int has_cycle(graph_t *graph);
+int _has_cycle(graph_t *graph, vertex_t *vertex, int component);
 int count_cycles(graph_t *graph, edge_t *edge);
 int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source);
 
@@ -132,62 +133,37 @@ graph_t *read_file(char *filename, int cflag) {
 }
 
 int has_cycle(graph_t *graph) {
-	vertex_t **stack = (vertex_t **)malloc(graph->n_vertices * sizeof(vertex_t *));
-	assert(stack);
-	int n_stack = 0;
-
 	for (int i = 0; i < graph->n_vertices; i++) {
 		graph->vertices[i]->tag = 0;
 	}
 
-	/* Do DFS on each component */ 
 	for (int i = 0; i < graph->n_vertices; i++) {
-		if (!graph->vertices[i]->tag) {
-			/* Load up our source vertex for this component */
-			assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
-			stack[n_stack] = graph->vertices[i];
-			n_stack++;
-			/* DFS */
-			while (n_stack) {
-				vertex_t *vertex = stack[n_stack - 1];
-				vertex->tag = i + 1;
-				
-				int dead_end = 1;
-				for (int j = 0; j < graph->n_edges; j++) {
-					if (incidence(graph->edges[j], vertex) == -1) {
-						/* Did we find a new vertex? */
-						if (!graph->edges[j]->end->tag) {
-							assert(n_stack <= graph->n_vertices); // TODO: have faith and remove
-							stack[n_stack] = graph->edges[j]->end;
-							n_stack++;
-							dead_end = 0;
-							break;
-						/* Do we have a back-edge? */
-						} else if (graph->edges[j]->end->tag == i + 1) {
-							free(stack);
-							return 1;
-						}
-					}
-				}
-
-				if (dead_end) {
-					n_stack--;
-				}
-			}
+		if (_has_cycle(graph, graph->vertices[i], i + 1)) {
+			return 1;
 		}
 	}
 
-	free(stack);
+	return 0;
+}
+
+int _has_cycle(graph_t *graph, vertex_t *vertex, int component) {
+	vertex->tag = component;
+	for (int i = 0; i < graph->n_edges; i++) {
+		if (incidence(graph->edges[i], vertex) == -1) {
+			if (!graph->edges[i]->end->tag) {
+				if (_has_cycle(graph, graph->edges[i]->end, component)) {
+					return 1;
+				}
+			} else if (graph->edges[i]->end->tag == component) {
+				return 1;
+			}
+		}
+	}
 	return 0;
 }
 
 int count_cycles(graph_t *graph, edge_t *edge) {
-	int n_cycles = 0;
-	vertex_t *source = edge->end, *target = edge->start;
-	
-	n_cycles = _count_cycles(graph, target, source);
-	
-	return n_cycles;
+	return _count_cycles(graph, edge->start, edge->end);
 }
 
 int _count_cycles(graph_t *graph, vertex_t *target, vertex_t *source) {
