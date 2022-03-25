@@ -47,7 +47,6 @@ int main(int argc, char *argv[]) {
 			for (int i = 0; i < graph->n_edges; i++) {
 				int n_cycles = count_cycles(graph, graph->edges[i]);
 				if (n_cycles > max_cycles || (n_cycles == max_cycles && graph->edges[i]->name < best->name)) {
-					assert(best);
 					best = graph->edges[i];
 					max_cycles = n_cycles;
 				}
