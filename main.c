@@ -64,8 +64,13 @@ int main(int argc, char *argv[]) {
 			}
 			remove_edge(graph, graph->edges[best]->name);
 		}
-		printf("\n");
-		free(n_cycles);
+		/* Were there any deadlocks found? */
+		if (first) {
+			printf("No deadlocks\n");
+		} else {
+			printf("\n");
+			free(n_cycles);
+		}
 	}
 
 	return 0;
